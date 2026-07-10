@@ -5,8 +5,10 @@
  *
  * Este script:
  *  - Crea automáticamente la hoja "Respuestas" si no existe.
- *  - Escribe los encabezados a partir de las claves recibidas en el
- *    primer envío.
+ *  - Escribe los encabezados en el mismo orden en que se hicieron las
+ *    preguntas (usa el campo `_column_order` que envía el formulario,
+ *    en vez de confiar en el orden de `e.parameter`, que Apps Script no
+ *    garantiza y puede alfabetizar columnas como p1, p10, p11, p2...).
  *  - Si en el futuro agregas o quitas preguntas en `src/data/questions.js`,
  *    detecta columnas nuevas y las agrega solas al final, sin romper
  *    los datos ya guardados.
@@ -20,15 +22,17 @@ function doPost(e) {
     SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
 
   const params = e.parameter;
-  const incomingKeys = Object.keys(params);
+  const order = params._column_order
+    ? JSON.parse(params._column_order)
+    : Object.keys(params).filter((key) => key !== '_column_order');
 
   let headers;
   if (sheet.getLastRow() === 0) {
-    headers = incomingKeys;
+    headers = order;
     sheet.appendRow(headers);
   } else {
     headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    const missing = incomingKeys.filter((key) => headers.indexOf(key) === -1);
+    const missing = order.filter((key) => headers.indexOf(key) === -1);
     if (missing.length > 0) {
       headers = headers.concat(missing);
       sheet.getRange(1, 1, 1, headers.length).setValues([headers]);

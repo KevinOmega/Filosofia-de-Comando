@@ -153,6 +153,30 @@ las columnas nuevas solo, sin romper los datos existentes.
    en palabras (ej. "De acuerdo"), y la columna sin sufijo guarda el
    valor numérico (1 a 5), útil para análisis estadístico.
 
+### Si ya tenías el script conectado y las columnas salen en desorden
+
+Apps Script no garantiza el orden de las claves de `e.parameter` (por
+eso columnas como `p1`, `p10`, `p11`, `p12`, `p2`... podían aparecer
+alfabetizadas en vez de en el orden real de la encuesta). Esto ya está
+corregido: el formulario ahora envía un campo extra `_column_order`
+con el orden exacto, y `Code.gs` lo usa para escribir los encabezados.
+
+Para aplicar la corrección si ya tenías el script desplegado:
+
+1. Reemplaza el contenido de tu `Code.gs` en Apps Script por la versión
+   actualizada de [`google-apps-script/Code.gs`](./google-apps-script/Code.gs).
+2. Ve a **Implementar → Gestionar implementaciones**, edita tu
+   implementación existente (ícono de lápiz) y sube una **Nueva
+   versión**. Así la URL pública (`/exec`) no cambia y no necesitas
+   tocar tu `.env`.
+3. Si tu hoja **"Respuestas"** ya tiene filas guardadas con el
+   encabezado en el orden incorrecto: como el script siempre escribe
+   cada valor en la columna que coincide con el texto del encabezado
+   (sin importar su posición), basta con **reordenar manualmente la
+   fila 1** (arrastrando columnas o cortando/pegando celdas) al orden
+   que prefieras una sola vez. Los envíos futuros seguirán
+   respetando esa fila de encabezados tal cual la dejes.
+
 ### Notas técnicas
 
 - La petición se envía con `fetch(..., { mode: 'no-cors' })` porque

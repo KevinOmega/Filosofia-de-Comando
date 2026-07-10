@@ -101,6 +101,11 @@ async function submit() {
     }
   })
 
+  // Apps Script no garantiza el orden de las claves de `e.parameter`, así
+  // que enviamos el orden deseado explícitamente para que las columnas del
+  // Google Sheet queden siempre en el orden correcto.
+  payload._column_order = JSON.stringify(Object.keys(payload))
+
   try {
     await submitToGoogleSheets(payload)
     phase.value = 'success'
