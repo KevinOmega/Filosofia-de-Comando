@@ -104,6 +104,11 @@ defineEmits(['start'])
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  text-align: justify;
+  text-justify: inter-word;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .cover__description {

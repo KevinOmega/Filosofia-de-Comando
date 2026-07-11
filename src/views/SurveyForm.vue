@@ -5,14 +5,15 @@ import { theme } from '../config/theme.js'
 import { submitToGoogleSheets } from '../services/googleSheets.js'
 import ProgressBar from '../components/ProgressBar.vue'
 import ChoiceQuestion from '../components/ChoiceQuestion.vue'
-import TextQuestion from '../components/TextQuestion.vue'
+import PersonalDataForm from '../components/PersonalDataForm.vue'
 import CoverScreen from '../components/CoverScreen.vue'
 import SuccessScreen from '../components/SuccessScreen.vue'
 
-// Cada paso del wizard es o un campo de texto (datos personales) o una
-// pregunta de selección múltiple. Se arma dinámicamente desde src/data/questions.js
+// Cada paso del wizard es o la pantalla de datos personales (todos los campos
+// juntos) o una pregunta de selección múltiple. Se arma dinámicamente desde
+// src/data/questions.js
 const steps = [
-  ...personalFields.map((field) => ({ kind: 'text', field })),
+  { kind: 'personal', fields: personalFields },
   ...normalizedQuestions.map((question) => ({ kind: 'choice', question })),
 ]
 
@@ -25,7 +26,7 @@ const errors = reactive({})
 const currentStep = computed(() => steps[stepIndex.value])
 const isFirstStep = computed(() => stepIndex.value === 0)
 const isLastStep = computed(() => stepIndex.value === steps.length - 1)
-const stepKey = (step) => (step.kind === 'text' ? step.field.id : step.question.id)
+const stepKey = (step) => (step.kind === 'personal' ? 'personal' : step.question.id)
 
 // Numeración visible de la pregunta (1..N), independiente de los pasos de
 // datos personales, para que coincida con la numeración del instrumento original.
@@ -35,28 +36,29 @@ const currentQuestionNumber = computed(() => {
   return normalizedQuestions.findIndex((q) => q.id === step.question.id) + 1
 })
 
-function currentAnswer() {
-  return answers[stepKey(currentStep.value)]
-}
-
 function validateCurrentStep() {
   const step = currentStep.value
-  const key = stepKey(step)
-  errors[key] = ''
 
-  if (step.kind === 'text') {
-    const value = (answers[key] || '').trim()
-    if (step.field.required && !value) {
-      errors[key] = 'Este campo es obligatorio.'
-      return false
-    }
-    if (step.field.type === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      errors[key] = 'Ingresa un correo electrónico válido.'
-      return false
-    }
-    return true
+  if (step.kind === 'personal') {
+    let isValid = true
+    step.fields.forEach((field) => {
+      errors[field.id] = ''
+      const value = (answers[field.id] || '').trim()
+      if (field.required && !value) {
+        errors[field.id] = 'Este campo es obligatorio.'
+        isValid = false
+        return
+      }
+      if (field.type === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        errors[field.id] = 'Ingresa un correo electrónico válido.'
+        isValid = false
+      }
+    })
+    return isValid
   }
 
+  const key = stepKey(step)
+  errors[key] = ''
   if (step.question.required && (answers[key] === undefined || answers[key] === null)) {
     errors[key] = 'Selecciona una opción para continuar.'
     return false
@@ -90,11 +92,12 @@ async function submit() {
   phase.value = 'submitting'
   const payload = { fecha_envio: new Date().toISOString() }
   steps.forEach((step) => {
-    const key = stepKey(step)
-    if (step.kind === 'choice') {
-      payload[key] = answers[key] ?? ''
+    if (step.kind === 'personal') {
+      step.fields.forEach((field) => {
+        payload[field.id] = answers[field.id] || ''
+      })
     } else {
-      payload[key] = answers[key] || ''
+      payload[step.question.id] = answers[step.question.id] ?? ''
     }
   })
 
@@ -146,11 +149,12 @@ function onEnterKey(event) {
     <main class="wizard__main">
       <Transition :name="direction > 0 ? 'step' : 'step-back'" mode="out-in">
         <div class="wizard__card glass" :key="stepKey(currentStep)">
-          <TextQuestion
-            v-if="currentStep.kind === 'text'"
-            :field="currentStep.field"
-            v-model="answers[stepKey(currentStep)]"
-            :error="errors[stepKey(currentStep)]"
+          <PersonalDataForm
+            v-if="currentStep.kind === 'personal'"
+            :fields="currentStep.fields"
+            :model-value="answers"
+            :errors="errors"
+            @update:modelValue="Object.assign(answers, $event)"
             @keyup.enter="onEnterKey"
           />
           <ChoiceQuestion
