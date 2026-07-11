@@ -21,7 +21,6 @@ defineEmits(['start'])
       />
       <span class="cover__eyebrow">Encuesta académica</span>
       <h1 class="cover__title">{{ theme.title }}</h1>
-      <p class="cover__subtitle">{{ theme.subtitle }}</p>
       <p class="cover__description">{{ theme.description }}</p>
 
       <button class="cover__cta" type="button" @click="$emit('start')">
@@ -105,13 +104,6 @@ defineEmits(['start'])
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-
-.cover__subtitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-mid);
-  margin: 0 0 16px;
 }
 
 .cover__description {

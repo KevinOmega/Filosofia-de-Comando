@@ -35,6 +35,14 @@ body {
   color: var(--text-hi);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  text-transform: uppercase;
+}
+
+input,
+textarea,
+select,
+button {
+  text-transform: inherit;
 }
 
 #app {

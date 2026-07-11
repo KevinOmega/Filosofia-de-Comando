@@ -20,8 +20,8 @@ export const theme = {
   successImage: '/images/gracias.jpg',
 
   // Textos de portada
-  title: 'Filosofía de Mando Tipo Misión',
-  subtitle: 'Ejército de Bolivia · Desafíos y amenazas emergentes del siglo XXI',
+  title:
+    'Filosofía de Mando Tipo Misión en el Ejército de Bolivia, para enfrentar los desafíos y amenazas emergentes del siglo XXI',
   description:
     'Tu opinión como profesional militar es clave para esta investigación. La encuesta toma menos de 5 minutos y tus respuestas son confidenciales.',
   startButtonLabel: 'Comenzar encuesta',

@@ -6,6 +6,18 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
+
+function onInput(event) {
+  const input = event.target
+  const raw = input.value
+  const value = props.field.type === 'email' ? raw : raw.toUpperCase()
+  if (value !== raw) {
+    const caret = input.selectionStart
+    input.value = value
+    input.setSelectionRange(caret, caret)
+  }
+  emit('update:modelValue', value)
+}
 </script>
 
 <template>
@@ -20,7 +32,7 @@ const emit = defineEmits(['update:modelValue'])
       :placeholder="field.placeholder"
       :autocomplete="field.autocomplete"
       :value="modelValue"
-      @input="emit('update:modelValue', $event.target.value)"
+      @input="onInput"
       autofocus
     />
     <p v-if="error" class="text-question__error">{{ error }}</p>

@@ -92,10 +92,7 @@ async function submit() {
   steps.forEach((step) => {
     const key = stepKey(step)
     if (step.kind === 'choice') {
-      const value = answers[key]
-      const option = step.question.options.find((o) => o.value === value)
-      payload[key] = value ?? ''
-      payload[`${key}_texto`] = option ? option.label : ''
+      payload[key] = answers[key] ?? ''
     } else {
       payload[key] = answers[key] || ''
     }

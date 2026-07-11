@@ -26,6 +26,24 @@ export const likertOptions = [
  */
 export const personalFields = [
   {
+    id: 'grado',
+    type: 'text',
+    label: 'Grado',
+    placeholder: 'Ej. Teniente',
+    autocomplete: 'off',
+    icon: '🎖️',
+    required: true,
+  },
+  {
+    id: 'arma',
+    type: 'text',
+    label: 'Arma',
+    placeholder: 'Ej. Infantería',
+    autocomplete: 'off',
+    icon: '⚔️',
+    required: true,
+  },
+  {
     id: 'nombre_completo',
     type: 'text',
     label: 'Nombre completo',

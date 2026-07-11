@@ -15,8 +15,8 @@ function select(value) {
 <template>
   <div class="choice-question">
     <div class="choice-question__meta">
-      <span class="badge">{{ question.dimension }}</span>
-      <span class="badge badge--ghost">{{ question.indicator }}</span>
+      <span class="badge">Dimensión: {{ question.dimension }}</span>
+      <span class="badge badge--ghost">Indicador: {{ question.indicator }}</span>
     </div>
 
     <div class="choice-question__question">
@@ -71,7 +71,6 @@ function select(value) {
 .badge--ghost {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-mid);
-  text-transform: none;
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -107,7 +106,9 @@ function select(value) {
   color: var(--text-hi);
   text-align: justify;
   text-justify: inter-word;
-  hyphens: auto;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .choice-question__options {

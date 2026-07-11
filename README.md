@@ -147,11 +147,10 @@ las columnas nuevas solo, sin romper los datos existentes.
 
 1. Completa la encuesta en el navegador hasta el final.
 2. Abre tu Google Sheet: debería aparecer una hoja **"Respuestas"** con
-   una fila nueva, incluyendo `nombre_completo`, `correo`,
-   `fecha_envio` y una columna por cada pregunta (`p1`, `p1_texto`,
-   `p2`, `p2_texto`, ...). La columna `_texto` guarda la opción elegida
-   en palabras (ej. "De acuerdo"), y la columna sin sufijo guarda el
-   valor numérico (1 a 5), útil para análisis estadístico.
+   una fila nueva, incluyendo `grado`, `arma`, `nombre_completo`,
+   `correo`, `fecha_envio` y una columna por cada pregunta (`p1`, `p2`,
+   ...) con el valor numérico de la escala Likert (1 a 5), útil para
+   análisis estadístico.
 
 ### Si ya tenías el script conectado y las columnas salen en desorden
 
