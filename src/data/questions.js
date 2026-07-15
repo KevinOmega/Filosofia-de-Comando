@@ -113,6 +113,13 @@ export const questions = [
     indicator: 'Nivel de preparación',
     text: '¿El personal militar se encuentra preparado para actuar eficazmente en escenarios operativos complejos mediante la aplicación de una filosofía de mando tipo misión?',
     type: 'choice',
+    options: [
+      { value: 5, label: 'Totalmente preparado' },
+      { value: 4, label: 'Preparado' },
+      { value: 3, label: 'Medianamente preparado' },
+      { value: 2, label: 'Casi preparado' },
+      { value: 1, label: 'Sin preparación' },
+    ],
   },
   {
     id: 'p6',
