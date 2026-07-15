@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { panelRows, questionInfo, dimensionOrder, questionColumnIndex } from '../data/panelResults.js'
 
 const N = panelRows.length
+const isExporting = ref(false)
 const questionIds = Object.keys(questionColumnIndex).sort(
   (a, b) => Number(a.slice(1)) - Number(b.slice(1))
 )
@@ -105,15 +106,119 @@ const tableRows = computed(() =>
     }
   })
 )
+
+function styleHeaderRow(row) {
+  row.font = { bold: true }
+  row.eachCell((cell) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0EFEC' } }
+  })
+}
+
+async function downloadExcel() {
+  if (isExporting.value) return
+  isExporting.value = true
+  try {
+    await buildAndDownloadWorkbook()
+  } finally {
+    isExporting.value = false
+  }
+}
+
+async function buildAndDownloadWorkbook() {
+  const [{ default: ExcelJS }, { drawHBarChart, drawDistributionChart, dataUrlToBase64 }] = await Promise.all([
+    import('exceljs'),
+    import('../utils/chartImages.js'),
+  ])
+
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Encuesta · Filosofía de Mando Tipo Misión'
+
+  // ---- Detalle ----
+  const wsDetalle = wb.addWorksheet('Detalle')
+  const detalleHeader = ['Grado', 'Arma', 'Nombre completo', ...questionIds.map((q) => q.toUpperCase()), 'Promedio']
+  styleHeaderRow(wsDetalle.addRow(detalleHeader))
+  tableRows.value.forEach((r) => {
+    wsDetalle.addRow([r.grado, r.arma, r.nombre, ...r.vals, Number(fmt1(r.avg))])
+  })
+  wsDetalle.columns.forEach((col, i) => {
+    col.width = i === 2 ? 32 : i < 2 ? 16 : 9
+  })
+
+  // ---- Preguntas ----
+  const wsPreguntas = wb.addWorksheet('Preguntas')
+  styleHeaderRow(
+    wsPreguntas.addRow(['Pregunta', 'Dimensión', 'Texto', 'Promedio', 'Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4', 'Nivel 5'])
+  )
+  distRows.value.forEach((d) => {
+    const counts = [1, 2, 3, 4, 5].map((lvl) => d.segments.find((s) => s.level === lvl)?.count ?? 0)
+    wsPreguntas.addRow([d.qid.toUpperCase(), questionInfo[d.qid].dim, d.text, Number(fmt1(qMeans.value[d.qid])), ...counts])
+  })
+  wsPreguntas.columns.forEach((col, i) => {
+    col.width = i === 2 ? 48 : i === 1 ? 20 : 12
+  })
+
+  // ---- Dimensiones ----
+  const wsDimensiones = wb.addWorksheet('Dimensiones')
+  styleHeaderRow(wsDimensiones.addRow(['Dimensión', 'Promedio']))
+  dimChartRows.value.forEach((r) => wsDimensiones.addRow([r.dim, Number(fmt1(r.val))]))
+  wsDimensiones.columns.forEach((col) => {
+    col.width = 22
+  })
+
+  // ---- Gráficos (imágenes) ----
+  const dimImg = drawHBarChart({
+    title: 'Promedio por dimensión',
+    rows: dimChartRows.value.map((r) => ({ label: r.dim, value: r.val })),
+    barColor: '#256abf',
+  })
+  const qImg = drawHBarChart({
+    title: 'Promedio por pregunta',
+    rows: qChartGroups.value.flatMap((g) =>
+      g.rows.map((r) => ({ label: `${r.qid.toUpperCase()} · ${r.text}`, value: r.val, group: g.dim }))
+    ),
+  })
+  const distImg = drawDistributionChart({
+    title: 'Distribución de respuestas por pregunta',
+    rows: distRows.value.map((d) => ({ label: `${d.qid.toUpperCase()} · ${d.text}`, segments: d.segments })),
+  })
+
+  const wsGraficos = wb.addWorksheet('Gráficos')
+  let imgId = wb.addImage({ base64: dataUrlToBase64(dimImg.dataUrl), extension: 'png' })
+  wsGraficos.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: dimImg.width, height: dimImg.height } })
+
+  let nextRow = Math.ceil(dimImg.height / 20) + 2
+  imgId = wb.addImage({ base64: dataUrlToBase64(qImg.dataUrl), extension: 'png' })
+  wsGraficos.addImage(imgId, { tl: { col: 0, row: nextRow }, ext: { width: qImg.width, height: qImg.height } })
+
+  nextRow += Math.ceil(qImg.height / 20) + 2
+  imgId = wb.addImage({ base64: dataUrlToBase64(distImg.dataUrl), extension: 'png' })
+  wsGraficos.addImage(imgId, { tl: { col: 0, row: nextRow }, ext: { width: distImg.width, height: distImg.height } })
+
+  const buffer = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'reporte-panel-mando-mision.xlsx'
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
   <div class="viz-root">
     <div class="wrap">
       <header class="page-head">
-        <p class="eyebrow">Encuesta · Filosofía de Mando Tipo Misión — Ejército de Bolivia</p>
-        <h1>Reporte de panel: 30 oficiales seleccionados</h1>
-        <p class="subtitle">Escala de todas las preguntas: 1 (más bajo) a 5 (más alto).</p>
+        <div class="page-head__row">
+          <div>
+            <p class="eyebrow">Encuesta · Filosofía de Mando Tipo Misión — Ejército de Bolivia</p>
+            <h1>Reporte de panel: 30 oficiales seleccionados</h1>
+            <p class="subtitle">Escala de todas las preguntas: 1 (más bajo) a 5 (más alto).</p>
+          </div>
+          <button type="button" class="download-btn" :disabled="isExporting" @click="downloadExcel">
+            {{ isExporting ? 'Generando...' : 'Descargar Excel' }}
+          </button>
+        </div>
       </header>
 
       <div class="stat-row">
@@ -262,6 +367,40 @@ h1 {
   max-width: 68ch;
   line-height: 1.5;
   margin: 0;
+}
+
+.page-head__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.download-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--seq-450);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.download-btn:hover {
+  opacity: 0.88;
+}
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.download-btn:active {
+  opacity: 0.75;
 }
 
 .card {
